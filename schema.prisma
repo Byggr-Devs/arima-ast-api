@@ -1,0 +1,201 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Designation {
+    SERVICEMANAGER
+    TECHNICIAN
+    FLOORMANAGER
+}
+
+enum Department {
+    ENGINEERING
+    MANAGEMENT
+}
+
+enum UserClass {
+    ADMIN
+    USER
+}
+
+model User {
+    id            Int     @id @default(autoincrement())
+    fullName      String?
+    employeeId    String  @unique
+    designation  Designation
+    department  Department
+    location      String?
+    userClass       UserClass
+    phone         String?
+    email         String  @unique
+    username      String  @unique
+    password      String
+
+    serviceCenters ServiceCenter[]
+
+    @@map("users")
+}
+
+model ServiceCenter {
+    id      Int    @id @default(autoincrement())
+    name    String
+    city    String
+    pincode String
+    state   String
+    zone    String
+    country String
+
+    stages        ServiceCenterStage[]
+    serviceTypes  ServiceCenterServiceType[]
+    vehicleModels ServiceCenterVehicleModel[]
+    alerts        ServiceCenterAlert[]
+    priorities    ServiceCenterPriority[]
+    users         User[]
+}
+
+model Stage {
+    id   Int    @id @default(autoincrement())
+    name String
+
+    serviceCenters ServiceCenterStage[]
+}
+
+model ServiceCenterStage {
+    serviceCenterId Int
+    serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
+    stageId         Int
+    stage           Stage         @relation(fields: [stageId], references: [id])
+
+    @@id([serviceCenterId, stageId])
+}
+
+model ServiceType {
+    id   Int    @id @default(autoincrement())
+    name String
+
+    serviceCenters ServiceCenterServiceType[]
+    jobRegistrations JobRegistrationServiceType[]
+}
+
+model ServiceCenterServiceType {
+    serviceCenterId Int
+    serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
+    serviceTypeId   Int
+    serviceType     ServiceType   @relation(fields: [serviceTypeId], references: [id])
+
+    @@id([serviceCenterId, serviceTypeId])
+}
+
+model VehicleModel {
+    id   Int    @id @default(autoincrement())
+    name String
+
+    serviceCenters ServiceCenterVehicleModel[]
+}
+
+model ServiceCenterVehicleModel {
+    serviceCenterId Int
+    serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
+    vehicleModelId  Int
+    vehicleModel    VehicleModel  @relation(fields: [vehicleModelId], references: [id])
+
+    @@id([serviceCenterId, vehicleModelId])
+}
+
+model Alert {
+    id   Int    @id @default(autoincrement())
+    name String
+
+    serviceCenters ServiceCenterAlert[]
+}
+
+model ServiceCenterAlert {
+    serviceCenterId Int
+    serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
+    alertId         Int
+    alert           Alert         @relation(fields: [alertId], references: [id])
+
+    @@id([serviceCenterId, alertId])
+}
+
+model Priority {
+    id   Int    @id @default(autoincrement())
+    name String
+
+    serviceCenters ServiceCenterPriority[]
+    jobRegistrations JobRegistration[]
+}
+
+model ServiceCenterPriority {
+    serviceCenterId Int
+    serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
+    priorityId      Int
+    priority        Priority      @relation(fields: [priorityId], references: [id])
+
+    @@id([serviceCenterId, priorityId])
+}
+enum JobStageStatus {
+    WAITING
+    IN_PROGRESS
+    COMPLETED
+}
+
+model JobRegistration {
+    id               Int      @id @default(autoincrement())
+    serviceCenterId  Int
+    ownerName        String
+    vehicleModelId   Int
+    vehicleNumber    String
+    ownerPhone       String
+    extraServiceRequired Boolean
+    extraServiceTimeEstimate String?
+    estimatedDeliveryTimestamp DateTime?
+    priorityId       Int
+    startTimestamp   DateTime?
+    endTimestamp     DateTime?
+    waitingStageStatus   JobStageStatus?
+    stageOneStatus   JobStageStatus?
+    stageTwoStatus   JobStageStatus?
+    stageThreeStatus JobStageStatus?
+    waterWashStageStatus JobStageStatus?
+
+    serviceTypes    JobRegistrationServiceType[]
+    priority        Priority      @relation(fields: [priorityId], references: [id])
+    jobTracking     JobTracking[]
+}
+
+model JobRegistrationServiceType {
+    jobRegistrationId Int
+    jobRegistration   JobRegistration @relation(fields: [jobRegistrationId], references: [id])
+    serviceTypeId     Int
+    serviceType       ServiceType    @relation(fields: [serviceTypeId], references: [id])
+
+    @@id([jobRegistrationId, serviceTypeId])
+}
+
+model JobTracking {
+    id              Int      @id @default(autoincrement())
+    jobId Int
+    cameraId Int
+    detectedTimestamp DateTime
+    detectedImageUrl String
+
+    job JobRegistration @relation(fields: [jobId], references: [id])
+    camera Camera @relation(fields: [cameraId], references: [id])
+}
+
+model Camera {
+    id Int @id @default(autoincrement())
+    name String
+    ip String
+    port Int
+    username String
+    password String
+    url String
+    jobTracking JobTracking[]
+}
