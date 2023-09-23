@@ -74,7 +74,8 @@ model ServiceCenterStage {
 }
 
 model ServiceType {
-    serviceCenterId   String @id
+    id   String @id @default(uuid())
+    serviceCenterId   String
     name String
 
     serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
@@ -137,7 +138,7 @@ model JobRegistrationServiceType {
     jobRegistrationId String
     jobRegistration   JobRegistration @relation(fields: [jobRegistrationId], references: [id])
     serviceTypeId     String
-    serviceType       ServiceType     @relation(fields: [serviceTypeId], references: [serviceCenterId])
+    serviceType       ServiceType     @relation(fields: [serviceTypeId], references: [id])
 
     @@id([jobRegistrationId, serviceTypeId])
 }

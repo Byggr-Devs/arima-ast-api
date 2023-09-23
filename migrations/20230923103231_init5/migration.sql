@@ -62,18 +62,10 @@ CREATE TABLE "ServiceCenterStage" (
 
 -- CreateTable
 CREATE TABLE "ServiceType" (
-    "id" TEXT NOT NULL,
+    "serviceCenterId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
 
-    CONSTRAINT "ServiceType_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "ServiceCenterServiceType" (
-    "serviceCenterId" TEXT NOT NULL,
-    "serviceTypeId" TEXT NOT NULL,
-
-    CONSTRAINT "ServiceCenterServiceType_pkey" PRIMARY KEY ("serviceCenterId","serviceTypeId")
+    CONSTRAINT "ServiceType_pkey" PRIMARY KEY ("serviceCenterId")
 );
 
 -- CreateTable
@@ -175,10 +167,7 @@ ALTER TABLE "ServiceCenterStage" ADD CONSTRAINT "ServiceCenterStage_serviceCente
 ALTER TABLE "ServiceCenterStage" ADD CONSTRAINT "ServiceCenterStage_stageId_fkey" FOREIGN KEY ("stageId") REFERENCES "Stage"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ServiceCenterServiceType" ADD CONSTRAINT "ServiceCenterServiceType_serviceCenterId_fkey" FOREIGN KEY ("serviceCenterId") REFERENCES "ServiceCenter"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ServiceCenterServiceType" ADD CONSTRAINT "ServiceCenterServiceType_serviceTypeId_fkey" FOREIGN KEY ("serviceTypeId") REFERENCES "ServiceType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ServiceType" ADD CONSTRAINT "ServiceType_serviceCenterId_fkey" FOREIGN KEY ("serviceCenterId") REFERENCES "ServiceCenter"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ServiceCenterAlert" ADD CONSTRAINT "ServiceCenterAlert_serviceCenterId_fkey" FOREIGN KEY ("serviceCenterId") REFERENCES "ServiceCenter"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -190,7 +179,7 @@ ALTER TABLE "ServiceCenterAlert" ADD CONSTRAINT "ServiceCenterAlert_alertId_fkey
 ALTER TABLE "JobRegistrationServiceType" ADD CONSTRAINT "JobRegistrationServiceType_jobRegistrationId_fkey" FOREIGN KEY ("jobRegistrationId") REFERENCES "JobRegistration"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "JobRegistrationServiceType" ADD CONSTRAINT "JobRegistrationServiceType_serviceTypeId_fkey" FOREIGN KEY ("serviceTypeId") REFERENCES "ServiceType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "JobRegistrationServiceType" ADD CONSTRAINT "JobRegistrationServiceType_serviceTypeId_fkey" FOREIGN KEY ("serviceTypeId") REFERENCES "ServiceType"("serviceCenterId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "JobTracking" ADD CONSTRAINT "JobTracking_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "JobRegistration"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
