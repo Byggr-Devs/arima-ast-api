@@ -52,7 +52,7 @@ model ServiceCenter {
     vehicleModels String[]
 
     stages       ServiceCenterStage[]
-    serviceTypes ServiceCenterServiceType[]
+    serviceTypes ServiceType[]
     alerts       ServiceCenterAlert[]
     users        User[]
 }
@@ -74,20 +74,11 @@ model ServiceCenterStage {
 }
 
 model ServiceType {
-    id   String @id @default(uuid())
+    serviceCenterId   String @id
     name String
 
-    serviceCenters   ServiceCenterServiceType[]
-    jobRegistrations JobRegistrationServiceType[]
-}
-
-model ServiceCenterServiceType {
-    serviceCenterId String
     serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
-    serviceTypeId   String
-    serviceType     ServiceType   @relation(fields: [serviceTypeId], references: [id])
-
-    @@id([serviceCenterId, serviceTypeId])
+    jobRegistrations JobRegistrationServiceType[]
 }
 
 model Alert {
@@ -146,7 +137,7 @@ model JobRegistrationServiceType {
     jobRegistrationId String
     jobRegistration   JobRegistration @relation(fields: [jobRegistrationId], references: [id])
     serviceTypeId     String
-    serviceType       ServiceType     @relation(fields: [serviceTypeId], references: [id])
+    serviceType       ServiceType     @relation(fields: [serviceTypeId], references: [serviceCenterId])
 
     @@id([jobRegistrationId, serviceTypeId])
 }
