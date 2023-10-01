@@ -242,4 +242,28 @@ router.get("/process-jobs", async (req, res) => {
   res.send({ data: r });
 });
 
+router.delete("/delete-job/:jobId", async (req, res) => {
+  const jobId = req.params.jobId;
+  
+  const job = await prisma.$transaction([
+    prisma.jobStageStatus.deleteMany({
+      where: {
+        jobId,
+      },
+    }),
+    prisma.jobRegistrationServiceType.deleteMany({
+      where: {
+        jobRegistrationId: jobId,
+      },
+    }),
+    prisma.jobRegistration.delete({
+      where: {
+        id: jobId,
+      },
+    }),
+  ]);
+
+  res.send({ data: job });
+});
+
 export default router;
