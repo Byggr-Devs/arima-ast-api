@@ -1,170 +1,176 @@
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 enum Designation {
-    SERVICEMANAGER
-    TECHNICIAN
-    FLOORMANAGER
+  SERVICEMANAGER
+  TECHNICIAN
+  FLOORMANAGER
 }
 
 enum Department {
-    ENGINEERING
-    MANAGEMENT
+  ENGINEERING
+  MANAGEMENT
 }
 
 enum UserClass {
-    ADMIN
-    USER
+  ADMIN
+  USER
 }
 
 model User {
-    id          String      @id @default(uuid())
-    fullName    String?
-    employeeId  String      @unique
-    designation Designation
-    department  Department
-    location    String?
-    userClass   UserClass
-    phone       String?
-    email       String      @unique
-    username    String      @unique
-    password    String
+  id          String      @id @default(uuid())
+  fullName    String?
+  employeeId  String      @unique
+  designation Designation
+  department  Department
+  location    String?
+  userClass   UserClass
+  phone       String?
+  email       String      @unique
+  username    String      @unique
+  password    String
 
-    serviceCenters ServiceCenter[]
+  serviceCenters ServiceCenter[]
 
-    @@map("users")
+  @@map("users")
 }
 
 model ServiceCenter {
-    id            String   @id @default(uuid())
-    name          String
-    city          String
-    pincode       String
-    state         String
-    zone          String
-    country       String
-    vehicleModels String[]
+  id            String   @id @default(uuid())
+  name          String
+  city          String
+  pincode       String
+  state         String
+  zone          String
+  country       String
+  vehicleModels String[]
 
-    stages       Stage[]
-    serviceTypes ServiceType[]
-    alerts       ServiceCenterAlert[]
-    users        User[]
+  stages       Stage[]
+  serviceTypes ServiceType[]
+  alerts       ServiceCenterAlert[]
+  users        User[]
 }
 
 model Stage {
-    id              String @id @default(uuid())
-    serviceCenterId String
-    name            String
+  id              String @id @default(uuid())
+  serviceCenterId String
+  name            String
 
-    serviceCenter    ServiceCenter    @relation(fields: [serviceCenterId], references: [id])
-    JobStageStatuses JobStageStatus[]
+  serviceCenter    ServiceCenter    @relation(fields: [serviceCenterId], references: [id])
+  JobStageStatuses JobStageStatus[]
 }
 
 model ServiceType {
-    id              String @id @default(uuid())
-    serviceCenterId String
-    name            String
+  id              String @id @default(uuid())
+  serviceCenterId String
+  name            String
 
-    serviceCenter    ServiceCenter                @relation(fields: [serviceCenterId], references: [id])
-    jobRegistrations JobRegistrationServiceType[]
+  serviceCenter    ServiceCenter                @relation(fields: [serviceCenterId], references: [id])
+  jobRegistrations JobRegistrationServiceType[]
 }
 
 model Alert {
-    id   String @id @default(uuid())
-    name String
+  id   String @id @default(uuid())
+  name String
 
-    serviceCenters ServiceCenterAlert[]
+  serviceCenters ServiceCenterAlert[]
 }
 
 model ServiceCenterAlert {
-    serviceCenterId String
-    serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
-    alertId         String
-    alert           Alert         @relation(fields: [alertId], references: [id])
+  serviceCenterId String
+  serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
+  alertId         String
+  alert           Alert         @relation(fields: [alertId], references: [id])
 
-    @@id([serviceCenterId, alertId])
+  @@id([serviceCenterId, alertId])
 }
 
 enum JobStageStatusEnum {
-    WAITING
-    IN_PROGRESS
-    COMPLETED
-    YELLOW_ALERT
-    RED_ALERT
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  YELLOW_ALERT
+  RED_ALERT
 }
 
 enum Priority {
-    LOW
-    MEDIUM
-    HIGH
-    URGENT
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 model JobRegistration {
-    id                         String    @id @default(uuid())
-    serviceCenterId            String
-    ownerName                  String
-    vehicleModel               String
-    vehicleNumber              String
-    ownerPhone                 String
-    extraServiceRequired       Boolean
-    extraServiceTimeEstimate   String?
-    estimatedDeliveryTimestamp DateTime?
-    priority                   Priority  @default(LOW)
-    startTimestamp             DateTime?
-    endTimestamp               DateTime?
+  id                         String    @id @default(uuid())
+  serviceCenterId            String
+  ownerName                  String
+  vehicleModel               String
+  vehicleNumber              String
+  ownerPhone                 String
+  extraServiceRequired       Boolean
+  extraServiceTimeEstimate   String?
+  estimatedDeliveryTimestamp DateTime?
+  priority                   Priority  @default(LOW)
+  startTimestamp             DateTime?
+  endTimestamp               DateTime?
 
-    jobStageStatuses JobStageStatus[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    serviceTypes JobRegistrationServiceType[]
-    jobTracking  JobTracking[]
+  jobStageStatuses JobStageStatus[]
+
+  serviceTypes JobRegistrationServiceType[]
+  jobTracking  JobTracking[]
 }
 
 model JobStageStatus {
-    jobId   String
-    stageId String
+  jobId   String
+  stageId String
 
-    status JobStageStatusEnum @default(WAITING)
+  status JobStageStatusEnum @default(WAITING)
 
-    job   JobRegistration @relation(fields: [jobId], references: [id])
-    stage Stage           @relation(fields: [stageId], references: [id])
+  job   JobRegistration @relation(fields: [jobId], references: [id])
+  stage Stage           @relation(fields: [stageId], references: [id])
 
-    @@id([jobId, stageId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([jobId, stageId])
 }
 
 model JobRegistrationServiceType {
-    jobRegistrationId String
-    jobRegistration   JobRegistration @relation(fields: [jobRegistrationId], references: [id])
-    serviceTypeId     String
-    serviceType       ServiceType     @relation(fields: [serviceTypeId], references: [id])
+  jobRegistrationId String
+  jobRegistration   JobRegistration @relation(fields: [jobRegistrationId], references: [id])
+  serviceTypeId     String
+  serviceType       ServiceType     @relation(fields: [serviceTypeId], references: [id])
 
-    @@id([jobRegistrationId, serviceTypeId])
+  @@id([jobRegistrationId, serviceTypeId])
 }
 
 model JobTracking {
-    id                String   @id @default(uuid())
-    jobId             String
-    cameraId          String
-    detectedTimestamp DateTime
-    detectedImageUrl  String
+  id                String   @id @default(uuid())
+  jobId             String
+  cameraId          String
+  detectedTimestamp DateTime
+  detectedImageUrl  String
 
-    job    JobRegistration @relation(fields: [jobId], references: [id])
-    camera Camera          @relation(fields: [cameraId], references: [id])
+  job    JobRegistration @relation(fields: [jobId], references: [id])
+  camera Camera          @relation(fields: [cameraId], references: [id])
 }
 
 model Camera {
-    id          String        @id @default(uuid())
-    name        String
-    ip          String
-    port        String
-    username    String
-    password    String
-    url         String
-    jobTracking JobTracking[]
+  id          String        @id @default(uuid())
+  name        String
+  ip          String
+  port        String
+  username    String
+  password    String
+  url         String
+  jobTracking JobTracking[]
 }

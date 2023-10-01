@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { JobStageStatus, PrismaClient } from "@prisma/client";
 import { Router } from "express";
 
 const router = Router();
@@ -170,7 +170,75 @@ router.get("/setup-db", async (req, res) => {
         ],
       },
     },
+    include: { serviceTypes: true, stages: true },
   });
+  res.send({ data: r });
+});
+
+router.get("/process-jobs", async (req, res) => {
+  // get all jobs and their stages
+  // for each stage, if the stage is not completed and in progress for more than 30 mins, set it to red alert
+  // for each stage, if the stage is not completed and in progress for more than 15 mins, set it to yellow alert
+
+  const jobs = await prisma.jobRegistration.findMany({
+    include: {
+      jobStageStatuses: { include: { stage: true } },
+    },
+  });
+
+  const updatedJobs = () => {
+    return jobs.map(async (job) => {
+      const jobStageStatuses: JobStageStatus[] = job.jobStageStatuses.map(
+        (jobStageStatus) => {
+          if (
+            jobStageStatus.status === "IN_PROGRESS" ||
+            jobStageStatus.status === "YELLOW_ALERT"
+          ) {
+            const timeElapsed = Date.now() - jobStageStatus.updatedAt.getTime();
+            // if (timeElapsed > 30 * 60 * 1000) {
+            if (timeElapsed > 50 * 1000) {
+              return {
+                ...jobStageStatus,
+                status: "RED_ALERT",
+              };
+            }
+            // if (timeElapsed > 15 * 60 * 1000) {
+            if (timeElapsed > 5 * 1000) {
+              return {
+                ...jobStageStatus,
+                status: "YELLOW_ALERT",
+              };
+            }
+          }
+          return jobStageStatus;
+        }
+      );
+      return prisma.jobRegistration.update({
+        where: {
+          id: job.id,
+        },
+        data: {
+          jobStageStatuses: {
+            updateMany: jobStageStatuses.map((jobStageStatus) => ({
+              data: {
+                status: jobStageStatus.status,
+                updatedAt: jobStageStatus.updatedAt,
+              },
+              where: {
+                stageId: jobStageStatus.stageId,
+              },
+            })),
+          },
+        },
+        include: {
+          serviceTypes: { include: { serviceType: true } },
+          jobStageStatuses: { include: { stage: true } },
+        },
+      });
+    });
+  };
+  const r = await Promise.all(updatedJobs());
+
   res.send({ data: r });
 });
 
