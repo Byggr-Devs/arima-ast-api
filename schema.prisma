@@ -51,34 +51,27 @@ model ServiceCenter {
     country       String
     vehicleModels String[]
 
-    stages       ServiceCenterStage[]
+    stages       Stage[]
     serviceTypes ServiceType[]
     alerts       ServiceCenterAlert[]
     users        User[]
 }
 
 model Stage {
-    id   String @id @default(uuid())
-    name String
-
-    serviceCenters ServiceCenterStage[]
-}
-
-model ServiceCenterStage {
+    id              String @id @default(uuid())
     serviceCenterId String
-    serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
-    stageId         String
-    stage           Stage         @relation(fields: [stageId], references: [id])
+    name            String
 
-    @@id([serviceCenterId, stageId])
+    serviceCenter    ServiceCenter    @relation(fields: [serviceCenterId], references: [id])
+    JobStageStatuses JobStageStatus[]
 }
 
 model ServiceType {
-    id   String @id @default(uuid())
-    serviceCenterId   String
-    name String
+    id              String @id @default(uuid())
+    serviceCenterId String
+    name            String
 
-    serviceCenter   ServiceCenter @relation(fields: [serviceCenterId], references: [id])
+    serviceCenter    ServiceCenter                @relation(fields: [serviceCenterId], references: [id])
     jobRegistrations JobRegistrationServiceType[]
 }
 
@@ -98,10 +91,12 @@ model ServiceCenterAlert {
     @@id([serviceCenterId, alertId])
 }
 
-enum JobStageStatus {
+enum JobStageStatusEnum {
     WAITING
     IN_PROGRESS
     COMPLETED
+    YELLOW_ALERT
+    RED_ALERT
 }
 
 enum Priority {
@@ -112,7 +107,7 @@ enum Priority {
 }
 
 model JobRegistration {
-    id                         String         @id @default(uuid())
+    id                         String    @id @default(uuid())
     serviceCenterId            String
     ownerName                  String
     vehicleModel               String
@@ -121,17 +116,26 @@ model JobRegistration {
     extraServiceRequired       Boolean
     extraServiceTimeEstimate   String?
     estimatedDeliveryTimestamp DateTime?
-    priority                   Priority       @default(LOW)
+    priority                   Priority  @default(LOW)
     startTimestamp             DateTime?
     endTimestamp               DateTime?
-    waitingStageStatus         JobStageStatus @default(WAITING)
-    stageOneStatus             JobStageStatus @default(WAITING)
-    stageTwoStatus             JobStageStatus @default(WAITING)
-    stageThreeStatus           JobStageStatus @default(WAITING)
-    waterWashStageStatus       JobStageStatus @default(WAITING)
+
+    jobStageStatuses JobStageStatus[]
 
     serviceTypes JobRegistrationServiceType[]
     jobTracking  JobTracking[]
+}
+
+model JobStageStatus {
+    jobId   String
+    stageId String
+
+    status JobStageStatusEnum @default(WAITING)
+
+    job   JobRegistration @relation(fields: [jobId], references: [id])
+    stage Stage           @relation(fields: [stageId], references: [id])
+
+    @@id([jobId, stageId])
 }
 
 model JobRegistrationServiceType {

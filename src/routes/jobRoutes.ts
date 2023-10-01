@@ -20,6 +20,16 @@ router.post("/job", async (req, res) => {
     startTimestamp,
   } = req.body;
 
+  const serviceCenter = await prisma.serviceCenter.findUnique({
+    where: { id: serviceCenterId },
+    include: { stages: true },
+  });
+
+  if (!serviceCenter) {
+    res.status(400).send({ error: "Invalid Service Center" });
+    return;
+  }
+
   const job = await prisma.jobRegistration.create({
     data: {
       serviceCenterId,
@@ -39,11 +49,11 @@ router.post("/job", async (req, res) => {
       extraServiceTimeEstimate: extraServiceTime,
       estimatedDeliveryTimestamp,
       priority,
-      waitingStageStatus: "WAITING",
-      stageOneStatus: "WAITING",
-      stageTwoStatus: "WAITING",
-      stageThreeStatus: "WAITING",
-      waterWashStageStatus: "WAITING",
+      jobStageStatuses: {
+        create: serviceCenter.stages.map((stage) => ({
+          stageId: stage.id,
+        })),
+      },
     },
     include: {
       serviceTypes: { include: { serviceType: true } },
@@ -55,7 +65,7 @@ router.post("/job", async (req, res) => {
 
 router.get("/registrationParams", async (req, res) => {
   const serviceCenters = await prisma.serviceCenter.findMany({
-    include: { serviceTypes: true },
+    include: { serviceTypes: true, stages: true },
   });
   const priorities = ["HIGH", "MEDIUM", "LOW", "URGENT"];
 
@@ -72,6 +82,7 @@ router.get("/tracking", async (req, res) => {
   const jobs = await prisma.jobRegistration.findMany({
     include: {
       serviceTypes: { include: { serviceType: true } },
+      jobStageStatuses: { include: { stage: true } },
     },
   });
 
@@ -81,11 +92,18 @@ router.get("/tracking", async (req, res) => {
 router.post("/update-job", async (req, res) => {
   const {
     jobId,
-    waitingStageStatus,
-    stageOneStatus,
-    stageTwoStatus,
-    stageThreeStatus,
-    waterWashStageStatus,
+    jobStageStatuses,
+  }: {
+    jobId: string;
+    jobStageStatuses: {
+      status:
+        | "WAITING"
+        | "IN_PROGRESS"
+        | "COMPLETED"
+        | "YELLOW_ALERT"
+        | "RED_ALERT";
+      stageId: string;
+    }[];
   } = req.body;
 
   const job = await prisma.jobRegistration.update({
@@ -93,11 +111,16 @@ router.post("/update-job", async (req, res) => {
       id: jobId,
     },
     data: {
-      waitingStageStatus,
-      stageOneStatus,
-      stageTwoStatus,
-      stageThreeStatus,
-      waterWashStageStatus,
+      jobStageStatuses: {
+        updateMany: jobStageStatuses.map((jobStageStatus) => ({
+          data: {
+            status: jobStageStatus.status,
+          },
+          where: {
+            stageId: jobStageStatus.stageId,
+          },
+        })),
+      },
     },
     include: {
       serviceTypes: { include: { serviceType: true } },
@@ -111,9 +134,7 @@ router.get("/jobs-filtered", async (req, res) => {
   const { stage } = req.query;
 
   const jobs = await prisma.jobRegistration.findMany({
-    where: {
-      
-    },
+    where: {},
     include: {
       serviceTypes: { include: { serviceType: true } },
     },
@@ -137,6 +158,15 @@ router.get("/setup-db", async (req, res) => {
           { name: "Service Type 1" },
           { name: "Service Type 2" },
           { name: "Service Type 3" },
+        ],
+      },
+      stages: {
+        create: [
+          { name: "Waiting" },
+          { name: "Stage 1" },
+          { name: "Stage 2" },
+          { name: "Stage 3" },
+          { name: "Water Wash" },
         ],
       },
     },
