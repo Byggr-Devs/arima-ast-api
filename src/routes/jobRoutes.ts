@@ -84,6 +84,15 @@ router.get("/tracking", async (req, res) => {
       serviceTypes: { include: { serviceType: true } },
       jobStageStatuses: { include: { stage: true } },
     },
+    where: {
+      jobStageStatuses: {
+        some: {
+          status: {
+            in: ["WAITING", "IN_PROGRESS", "YELLOW_ALERT", "RED_ALERT"],
+          },
+        },
+      },
+    },
   });
 
   res.send({ data: jobs });

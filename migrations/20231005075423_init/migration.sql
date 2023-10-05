@@ -8,7 +8,7 @@ CREATE TYPE "Department" AS ENUM ('ENGINEERING', 'MANAGEMENT');
 CREATE TYPE "UserClass" AS ENUM ('ADMIN', 'USER');
 
 -- CreateEnum
-CREATE TYPE "JobStageStatus" AS ENUM ('WAITING', 'IN_PROGRESS', 'COMPLETED');
+CREATE TYPE "JobStageStatusEnum" AS ENUM ('WAITING', 'IN_PROGRESS', 'COMPLETED', 'YELLOW_ALERT', 'RED_ALERT');
 
 -- CreateEnum
 CREATE TYPE "Priority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
@@ -47,25 +47,19 @@ CREATE TABLE "ServiceCenter" (
 -- CreateTable
 CREATE TABLE "Stage" (
     "id" TEXT NOT NULL,
+    "serviceCenterId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
 
     CONSTRAINT "Stage_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "ServiceCenterStage" (
-    "serviceCenterId" TEXT NOT NULL,
-    "stageId" TEXT NOT NULL,
-
-    CONSTRAINT "ServiceCenterStage_pkey" PRIMARY KEY ("serviceCenterId","stageId")
-);
-
--- CreateTable
 CREATE TABLE "ServiceType" (
+    "id" TEXT NOT NULL,
     "serviceCenterId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
 
-    CONSTRAINT "ServiceType_pkey" PRIMARY KEY ("serviceCenterId")
+    CONSTRAINT "ServiceType_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -98,13 +92,21 @@ CREATE TABLE "JobRegistration" (
     "priority" "Priority" NOT NULL DEFAULT 'LOW',
     "startTimestamp" TIMESTAMP(3),
     "endTimestamp" TIMESTAMP(3),
-    "waitingStageStatus" "JobStageStatus" NOT NULL DEFAULT 'WAITING',
-    "stageOneStatus" "JobStageStatus" NOT NULL DEFAULT 'WAITING',
-    "stageTwoStatus" "JobStageStatus" NOT NULL DEFAULT 'WAITING',
-    "stageThreeStatus" "JobStageStatus" NOT NULL DEFAULT 'WAITING',
-    "waterWashStageStatus" "JobStageStatus" NOT NULL DEFAULT 'WAITING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "JobRegistration_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "JobStageStatus" (
+    "jobId" TEXT NOT NULL,
+    "stageId" TEXT NOT NULL,
+    "status" "JobStageStatusEnum" NOT NULL DEFAULT 'WAITING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "JobStageStatus_pkey" PRIMARY KEY ("jobId","stageId")
 );
 
 -- CreateTable
@@ -161,10 +163,7 @@ CREATE UNIQUE INDEX "_ServiceCenterToUser_AB_unique" ON "_ServiceCenterToUser"("
 CREATE INDEX "_ServiceCenterToUser_B_index" ON "_ServiceCenterToUser"("B");
 
 -- AddForeignKey
-ALTER TABLE "ServiceCenterStage" ADD CONSTRAINT "ServiceCenterStage_serviceCenterId_fkey" FOREIGN KEY ("serviceCenterId") REFERENCES "ServiceCenter"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ServiceCenterStage" ADD CONSTRAINT "ServiceCenterStage_stageId_fkey" FOREIGN KEY ("stageId") REFERENCES "Stage"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Stage" ADD CONSTRAINT "Stage_serviceCenterId_fkey" FOREIGN KEY ("serviceCenterId") REFERENCES "ServiceCenter"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ServiceType" ADD CONSTRAINT "ServiceType_serviceCenterId_fkey" FOREIGN KEY ("serviceCenterId") REFERENCES "ServiceCenter"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -176,10 +175,16 @@ ALTER TABLE "ServiceCenterAlert" ADD CONSTRAINT "ServiceCenterAlert_serviceCente
 ALTER TABLE "ServiceCenterAlert" ADD CONSTRAINT "ServiceCenterAlert_alertId_fkey" FOREIGN KEY ("alertId") REFERENCES "Alert"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "JobStageStatus" ADD CONSTRAINT "JobStageStatus_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "JobRegistration"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "JobStageStatus" ADD CONSTRAINT "JobStageStatus_stageId_fkey" FOREIGN KEY ("stageId") REFERENCES "Stage"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "JobRegistrationServiceType" ADD CONSTRAINT "JobRegistrationServiceType_jobRegistrationId_fkey" FOREIGN KEY ("jobRegistrationId") REFERENCES "JobRegistration"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "JobRegistrationServiceType" ADD CONSTRAINT "JobRegistrationServiceType_serviceTypeId_fkey" FOREIGN KEY ("serviceTypeId") REFERENCES "ServiceType"("serviceCenterId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "JobRegistrationServiceType" ADD CONSTRAINT "JobRegistrationServiceType_serviceTypeId_fkey" FOREIGN KEY ("serviceTypeId") REFERENCES "ServiceType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "JobTracking" ADD CONSTRAINT "JobTracking_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "JobRegistration"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
