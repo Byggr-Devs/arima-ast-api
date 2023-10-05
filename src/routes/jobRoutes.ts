@@ -82,7 +82,7 @@ router.get("/tracking", async (req, res) => {
   const jobs = await prisma.jobRegistration.findMany({
     include: {
       serviceTypes: { include: { serviceType: true } },
-      jobStageStatuses: { include: { stage: true } },
+      jobStageStatuses: { include: { stage: true }, orderBy: { stage: { name: "asc" } } },
     },
     where: {
       jobStageStatuses: {
@@ -92,6 +92,9 @@ router.get("/tracking", async (req, res) => {
           },
         },
       },
+    },
+    orderBy: {
+      createdAt: "asc"
     },
   });
 
