@@ -61,6 +61,11 @@ model Stage {
   id              String @id @default(uuid())
   serviceCenterId String
   name            String
+  entryCameraId   String?
+  exitCameraId    String?
+
+  entryCamera Camera? @relation("entryCamera", fields: [entryCameraId], references: [id])
+  exitCamera  Camera? @relation("exitCamera", fields: [exitCameraId], references: [id])
 
   serviceCenter    ServiceCenter    @relation(fields: [serviceCenterId], references: [id])
   JobStageStatuses JobStageStatus[]
@@ -137,7 +142,7 @@ model JobStageStatus {
 
   job   JobRegistration @relation(fields: [jobId], references: [id])
   stage Stage           @relation(fields: [stageId], references: [id])
-  
+
   startTimestamp DateTime?
   endTimestamp   DateTime?
 
@@ -176,4 +181,7 @@ model Camera {
   password    String
   url         String
   jobTracking JobTracking[]
+
+  entryStages Stage[] @relation("entryCamera")
+  exitStages  Stage[] @relation("exitCamera")
 }

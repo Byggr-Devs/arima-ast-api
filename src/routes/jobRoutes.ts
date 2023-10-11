@@ -184,6 +184,107 @@ router.get("/jobs-filtered", async (req, res) => {
 });
 
 router.get("/setup-db", async (req, res) => {
+  const waitingStageCameraEntry = await prisma.camera.create({
+    data: {
+      name: "Waiting Stage Camera Entry",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+  const waitingStageCameraExit = await prisma.camera.create({
+    data: {
+      name: "Waiting Stage Camera Exit",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+  const stage1CameraEntry = await prisma.camera.create({
+    data: {
+      name: "Stage 1 Camera Entry",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+  const stage1CameraExit = await prisma.camera.create({
+    data: {
+      name: "Stage 1 Camera Exit",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+  const stage2CameraEntry = await prisma.camera.create({
+    data: {
+      name: "Stage 2 Camera Entry",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+  const stage2CameraExit = await prisma.camera.create({
+    data: {
+      name: "Stage 2 Camera Exit",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+  const stage3CameraEntry = await prisma.camera.create({
+    data: {
+      name: "Stage 3 Camera Entry",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+  const stage3CameraExit = await prisma.camera.create({
+    data: {
+      name: "Stage 3 Camera Exit",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+  const waterWashCameraEntry = await prisma.camera.create({
+    data: {
+      name: "Water Wash Camera Entry",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+  const waterWashCameraExit = await prisma.camera.create({
+    data: {
+      name: "Water Wash Camera Exit",
+      ip: "",
+      port: "",
+      password: "",
+      url: "",
+      username: "",
+    },
+  });
+
   const r = await prisma.serviceCenter.create({
     data: {
       id: "service-center-1",
@@ -202,11 +303,11 @@ router.get("/setup-db", async (req, res) => {
       },
       stages: {
         create: [
-          { name: "Waiting" },
-          { name: "Stage 1" },
-          { name: "Stage 2" },
-          { name: "Stage 3" },
-          { name: "Water Wash" },
+          { name: "Waiting", entryCameraId: waitingStageCameraEntry.id, exitCameraId: waitingStageCameraExit.id },
+          { name: "Stage 1", entryCameraId: stage1CameraEntry.id, exitCameraId: stage1CameraExit.id },
+          { name: "Stage 2", entryCameraId: stage2CameraEntry.id, exitCameraId: stage2CameraExit.id },
+          { name: "Stage 3", entryCameraId: stage3CameraEntry.id, exitCameraId: stage3CameraExit.id },
+          { name: "Water Wash", entryCameraId: waterWashCameraEntry.id, exitCameraId: waterWashCameraExit.id },
         ],
       },
     },
@@ -304,6 +405,47 @@ router.delete("/delete-job/:jobId", async (req, res) => {
   ]);
 
   res.send({ data: job });
+});
+
+router.post("/add-ml-entry", async (req, res) => {
+  const { vehicleNumber, cameraId } = req.body;
+
+  let response;
+  response = await prisma.jobStageStatus.updateMany({
+    data: {
+      status: "IN_PROGRESS",
+      startTimestamp: new Date(),
+    },
+    where: {
+      AND: {
+        stage: {
+          entryCameraId: cameraId,
+        },
+        job: {
+          vehicleNumber,
+        },
+      },
+    },
+  });
+
+  response = await prisma.jobStageStatus.updateMany({
+    data: {
+      status: "COMPLETED",
+      endTimestamp: new Date(),
+    },
+    where: {
+      AND: {
+        stage: {
+          exitCameraId: cameraId,
+        },
+        job: {
+          vehicleNumber,
+        },
+      },
+    },
+  });
+
+  res.send({ data: response });
 });
 
 export default router;
