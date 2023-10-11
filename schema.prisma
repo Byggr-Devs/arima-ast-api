@@ -137,6 +137,9 @@ model JobStageStatus {
 
   job   JobRegistration @relation(fields: [jobId], references: [id])
   stage Stage           @relation(fields: [stageId], references: [id])
+  
+  startTimestamp DateTime?
+  endTimestamp   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

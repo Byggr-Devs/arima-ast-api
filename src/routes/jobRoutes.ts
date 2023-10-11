@@ -82,7 +82,10 @@ router.get("/tracking", async (req, res) => {
   const jobs = await prisma.jobRegistration.findMany({
     include: {
       serviceTypes: { include: { serviceType: true } },
-      jobStageStatuses: { include: { stage: true }, orderBy: { stage: { name: "asc" } } },
+      jobStageStatuses: {
+        include: { stage: true },
+        orderBy: { stage: { name: "asc" } },
+      },
     },
     where: {
       jobStageStatuses: {
@@ -94,7 +97,7 @@ router.get("/tracking", async (req, res) => {
       },
     },
     orderBy: {
-      createdAt: "asc"
+      createdAt: "asc",
     },
   });
 
@@ -124,14 +127,39 @@ router.post("/update-job", async (req, res) => {
     },
     data: {
       jobStageStatuses: {
-        updateMany: jobStageStatuses.map((jobStageStatus) => ({
-          data: {
-            status: jobStageStatus.status,
-          },
-          where: {
-            stageId: jobStageStatus.stageId,
-          },
-        })),
+        updateMany: jobStageStatuses.map((jobStageStatus) => {
+          switch (jobStageStatus.status) {
+            case "IN_PROGRESS":
+              return {
+                data: {
+                  status: jobStageStatus.status,
+                  startTimestamp: new Date(),
+                },
+                where: {
+                  stageId: jobStageStatus.stageId,
+                },
+              };
+            case "COMPLETED":
+              return {
+                data: {
+                  status: jobStageStatus.status,
+                  endTimestamp: new Date(),
+                },
+                where: {
+                  stageId: jobStageStatus.stageId,
+                },
+              };
+            default:
+              return {
+                data: {
+                  status: jobStageStatus.status,
+                },
+                where: {
+                  stageId: jobStageStatus.stageId,
+                },
+              };
+          }
+        }),
       },
     },
     include: {
@@ -256,7 +284,7 @@ router.get("/process-jobs", async (req, res) => {
 
 router.delete("/delete-job/:jobId", async (req, res) => {
   const jobId = req.params.jobId;
-  
+
   const job = await prisma.$transaction([
     prisma.jobStageStatus.deleteMany({
       where: {
