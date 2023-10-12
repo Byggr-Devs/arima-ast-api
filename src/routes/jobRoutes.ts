@@ -408,13 +408,14 @@ router.delete("/delete-job/:jobId", async (req, res) => {
 });
 
 router.post("/add-ml-entry", async (req, res) => {
-  const { vehicleNumber, cameraId } = req.body;
+  const { vehicleNumber, cameraId, imageUrl } = req.body;
 
   let response;
   response = await prisma.jobStageStatus.updateMany({
     data: {
       status: "IN_PROGRESS",
       startTimestamp: new Date(),
+      entryImageUrl: imageUrl,
     },
     where: {
       AND: {
@@ -432,6 +433,7 @@ router.post("/add-ml-entry", async (req, res) => {
     data: {
       status: "COMPLETED",
       endTimestamp: new Date(),
+      exitImageUrl: imageUrl,
     },
     where: {
       AND: {
