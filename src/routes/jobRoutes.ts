@@ -303,11 +303,31 @@ router.get("/setup-db", async (req, res) => {
       },
       stages: {
         create: [
-          { name: "Waiting", entryCameraId: waitingStageCameraEntry.id, exitCameraId: waitingStageCameraExit.id },
-          { name: "Stage 1", entryCameraId: stage1CameraEntry.id, exitCameraId: stage1CameraExit.id },
-          { name: "Stage 2", entryCameraId: stage2CameraEntry.id, exitCameraId: stage2CameraExit.id },
-          { name: "Stage 3", entryCameraId: stage3CameraEntry.id, exitCameraId: stage3CameraExit.id },
-          { name: "Water Wash", entryCameraId: waterWashCameraEntry.id, exitCameraId: waterWashCameraExit.id },
+          {
+            name: "Waiting",
+            entryCameraId: waitingStageCameraEntry.id,
+            exitCameraId: waitingStageCameraExit.id,
+          },
+          {
+            name: "Stage 1",
+            entryCameraId: stage1CameraEntry.id,
+            exitCameraId: stage1CameraExit.id,
+          },
+          {
+            name: "Stage 2",
+            entryCameraId: stage2CameraEntry.id,
+            exitCameraId: stage2CameraExit.id,
+          },
+          {
+            name: "Stage 3",
+            entryCameraId: stage3CameraEntry.id,
+            exitCameraId: stage3CameraExit.id,
+          },
+          {
+            name: "Water Wash",
+            entryCameraId: waterWashCameraEntry.id,
+            exitCameraId: waterWashCameraExit.id,
+          },
         ],
       },
     },
@@ -408,44 +428,46 @@ router.delete("/delete-job/:jobId", async (req, res) => {
 });
 
 router.post("/add-ml-entry", async (req, res) => {
-  const { vehicleNumber, cameraId, imageUrl } = req.body;
+  const { vehicleNumber, entry, imageUrl, cameraId } = req.body;
 
   let response;
-  response = await prisma.jobStageStatus.updateMany({
-    data: {
-      status: "IN_PROGRESS",
-      startTimestamp: new Date(),
-      entryImageUrl: imageUrl,
-    },
-    where: {
-      AND: {
-        stage: {
-          entryCameraId: cameraId,
-        },
-        job: {
-          vehicleNumber,
+  if (entry) {
+    response = await prisma.jobStageStatus.updateMany({
+      data: {
+        status: "IN_PROGRESS",
+        startTimestamp: new Date(),
+        entryImageUrl: imageUrl,
+      },
+      where: {
+        AND: {
+          stage: {
+            entryCameraId: cameraId,
+          },
+          job: {
+            vehicleNumber,
+          },
         },
       },
-    },
-  });
-
-  response = await prisma.jobStageStatus.updateMany({
-    data: {
-      status: "COMPLETED",
-      endTimestamp: new Date(),
-      exitImageUrl: imageUrl,
-    },
-    where: {
-      AND: {
-        stage: {
-          exitCameraId: cameraId,
-        },
-        job: {
-          vehicleNumber,
+    });
+  } else {
+    response = await prisma.jobStageStatus.updateMany({
+      data: {
+        status: "COMPLETED",
+        endTimestamp: new Date(),
+        exitImageUrl: imageUrl,
+      },
+      where: {
+        AND: {
+          stage: {
+            exitCameraId: cameraId,
+          },
+          job: {
+            vehicleNumber,
+          },
         },
       },
-    },
-  });
+    });
+  }
 
   res.send({ data: response });
 });
