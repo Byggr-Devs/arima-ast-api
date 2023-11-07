@@ -49,6 +49,8 @@ CREATE TABLE "Stage" (
     "id" TEXT NOT NULL,
     "serviceCenterId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "entryCameraId" TEXT,
+    "exitCameraId" TEXT,
 
     CONSTRAINT "Stage_pkey" PRIMARY KEY ("id")
 );
@@ -103,6 +105,10 @@ CREATE TABLE "JobStageStatus" (
     "jobId" TEXT NOT NULL,
     "stageId" TEXT NOT NULL,
     "status" "JobStageStatusEnum" NOT NULL DEFAULT 'WAITING',
+    "startTimestamp" TIMESTAMP(3),
+    "endTimestamp" TIMESTAMP(3),
+    "entryImageUrl" TEXT,
+    "exitImageUrl" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -161,6 +167,12 @@ CREATE UNIQUE INDEX "_ServiceCenterToUser_AB_unique" ON "_ServiceCenterToUser"("
 
 -- CreateIndex
 CREATE INDEX "_ServiceCenterToUser_B_index" ON "_ServiceCenterToUser"("B");
+
+-- AddForeignKey
+ALTER TABLE "Stage" ADD CONSTRAINT "Stage_entryCameraId_fkey" FOREIGN KEY ("entryCameraId") REFERENCES "Camera"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Stage" ADD CONSTRAINT "Stage_exitCameraId_fkey" FOREIGN KEY ("exitCameraId") REFERENCES "Camera"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Stage" ADD CONSTRAINT "Stage_serviceCenterId_fkey" FOREIGN KEY ("serviceCenterId") REFERENCES "ServiceCenter"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

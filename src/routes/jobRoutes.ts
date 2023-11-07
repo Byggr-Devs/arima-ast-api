@@ -71,7 +71,7 @@ router.get("/registrationParams", async (req, res) => {
 
   res.send({
     data: {
-      serviceTypes: serviceCenters[0].serviceTypes,
+      serviceTypes: serviceCenters[0]?.serviceTypes,
       serviceCenters,
       priorities,
     },
