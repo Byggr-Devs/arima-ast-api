@@ -96,9 +96,7 @@ router.get("/tracking", async (req, res) => {
         },
       },
     },
-    orderBy: {
-      createdAt: "asc",
-    },
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
   });
 
   res.send({ data: jobs });
@@ -108,6 +106,7 @@ router.post("/update-job", async (req, res) => {
   const {
     jobId,
     jobStageStatuses,
+    isPinned,
   }: {
     jobId: string;
     jobStageStatuses: {
@@ -119,6 +118,7 @@ router.post("/update-job", async (req, res) => {
         | "RED_ALERT";
       stageId: string;
     }[];
+    isPinned: boolean;
   } = req.body;
 
   const job = await prisma.jobRegistration.update({
@@ -161,6 +161,7 @@ router.post("/update-job", async (req, res) => {
           }
         }),
       },
+      isPinned,
     },
     include: {
       serviceTypes: { include: { serviceType: true } },

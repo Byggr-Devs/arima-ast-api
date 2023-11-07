@@ -58,7 +58,7 @@ model ServiceCenter {
 }
 
 model Stage {
-  id              String @id @default(uuid())
+  id              String  @id @default(uuid())
   serviceCenterId String
   name            String
   entryCameraId   String?
@@ -124,6 +124,7 @@ model JobRegistration {
   priority                   Priority  @default(LOW)
   startTimestamp             DateTime?
   endTimestamp               DateTime?
+  isPinned                   Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
