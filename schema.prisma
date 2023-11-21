@@ -124,7 +124,7 @@ model JobRegistration {
   priority                   Priority  @default(LOW)
   startTimestamp             DateTime?
   endTimestamp               DateTime?
-  duration                   Int      @default(0)
+  duration                   Float     @default(0)
   isPinned                   Boolean   @default(false)
 
   createdAt DateTime @default(now())

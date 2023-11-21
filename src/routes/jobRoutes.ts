@@ -142,6 +142,7 @@ router.post("/update-job", async (req, res) => {
       id: jobId,
     },
     data: {
+      duration: Date.now() - jobStartTimeOld.getTime() + Number(oldJob.duration),
       jobStageStatuses: {
         updateMany: jobStageStatuses.map((jobStageStatus) => {
           switch (jobStageStatus.status) {
@@ -160,7 +161,6 @@ router.post("/update-job", async (req, res) => {
                 data: {
                   status: jobStageStatus.status,
                   endTimestamp: new Date(),
-                  duration: Date.now() - jobStartTimeOld.getTime() + oldJob.duration,
                 },
                 where: {
                   stageId: jobStageStatus.stageId,
@@ -373,7 +373,7 @@ router.get("/process-jobs", async (req, res) => {
             jobStageStatus.status === "IN_PROGRESS" ||
             jobStageStatus.status === "YELLOW_ALERT"
           ) {
-            const timeElapsed = Date.now() - jobStageStatus.updatedAt.getTime() + job.duration;
+            const timeElapsed = Date.now() - jobStageStatus.updatedAt.getTime() + Number(job.duration);
             // if (timeElapsed > 30 * 60 * 1000) {
             if (timeElapsed > 50 * 1000) {
               return {
