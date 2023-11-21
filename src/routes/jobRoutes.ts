@@ -121,6 +121,22 @@ router.post("/update-job", async (req, res) => {
     isPinned: boolean;
   } = req.body;
 
+  const oldJob = await prisma.jobRegistration.findUnique({
+    where: {
+      id: jobId,
+    },
+    include: {
+      jobStageStatuses: { include: { stage: true } },
+    },
+  });
+
+  if (!oldJob) {
+    res.status(400).send({ error: "Invalid Job Id" });
+    return;
+  }
+
+  let jobStartTimeOld = oldJob.startTimestamp ?? new Date();
+
   const job = await prisma.jobRegistration.update({
     where: {
       id: jobId,
@@ -144,6 +160,7 @@ router.post("/update-job", async (req, res) => {
                 data: {
                   status: jobStageStatus.status,
                   endTimestamp: new Date(),
+                  duration: Date.now() - jobStartTimeOld.getTime() + oldJob.duration,
                 },
                 where: {
                   stageId: jobStageStatus.stageId,
@@ -356,7 +373,7 @@ router.get("/process-jobs", async (req, res) => {
             jobStageStatus.status === "IN_PROGRESS" ||
             jobStageStatus.status === "YELLOW_ALERT"
           ) {
-            const timeElapsed = Date.now() - jobStageStatus.updatedAt.getTime();
+            const timeElapsed = Date.now() - jobStageStatus.updatedAt.getTime() + job.duration;
             // if (timeElapsed > 30 * 60 * 1000) {
             if (timeElapsed > 50 * 1000) {
               return {
