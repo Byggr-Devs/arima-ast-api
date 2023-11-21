@@ -58,11 +58,13 @@ model ServiceCenter {
 }
 
 model Stage {
-  id              String  @id @default(uuid())
-  serviceCenterId String
-  name            String
-  entryCameraId   String?
-  exitCameraId    String?
+  id                  String  @id @default(uuid())
+  serviceCenterId     String
+  name                String
+  entryCameraId       String?
+  exitCameraId        String?
+  redAlertDuration    Float   @default(10000000000000000000000000)
+  yellowAlertDuration Float   @default(10000000000000000000000000)
 
   entryCamera Camera? @relation("entryCamera", fields: [entryCameraId], references: [id])
   exitCamera  Camera? @relation("exitCamera", fields: [exitCameraId], references: [id])
@@ -124,7 +126,6 @@ model JobRegistration {
   priority                   Priority  @default(LOW)
   startTimestamp             DateTime?
   endTimestamp               DateTime?
-  duration                   Float     @default(0)
   isPinned                   Boolean   @default(false)
 
   createdAt DateTime @default(now())
@@ -147,6 +148,7 @@ model JobStageStatus {
 
   startTimestamp DateTime?
   endTimestamp   DateTime?
+  duration       Float     @default(0)
 
   entryImageUrl String?
   exitImageUrl  String?

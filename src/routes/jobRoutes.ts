@@ -1,5 +1,6 @@
 import { JobStageStatus, PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import { sendRedAlert, sendYellowAlert } from "../services/alert.service";
 
 const router = Router();
 
@@ -135,16 +136,17 @@ router.post("/update-job", async (req, res) => {
     return;
   }
 
-  let jobStartTimeOld = oldJob.startTimestamp ?? new Date();
-
   const job = await prisma.jobRegistration.update({
     where: {
       id: jobId,
     },
     data: {
-      duration: Date.now() - jobStartTimeOld.getTime() + Number(oldJob.duration),
       jobStageStatuses: {
         updateMany: jobStageStatuses.map((jobStageStatus) => {
+          let jobStageStatusOld = oldJob.jobStageStatuses.find(
+            (jobStageStatusOld) =>
+              jobStageStatusOld.stageId === jobStageStatus.stageId
+          )
           switch (jobStageStatus.status) {
             case "IN_PROGRESS":
               return {
@@ -161,6 +163,7 @@ router.post("/update-job", async (req, res) => {
                 data: {
                   status: jobStageStatus.status,
                   endTimestamp: new Date(),
+                  duration: Date.now() - (jobStageStatusOld?.startTimestamp?.getTime() ?? Date.now())  + Number(jobStageStatusOld?.duration),
                 },
                 where: {
                   stageId: jobStageStatus.stageId,
@@ -199,6 +202,21 @@ router.get("/jobs-filtered", async (req, res) => {
   });
 
   res.send({ data: jobs });
+});
+
+router.get("/update-alert-durations", async (req, res) => {
+  const redAlertDuration = 20000;
+  const yellowAlertDuration = 10000;
+
+  const stage = await prisma.stage.updateMany({
+    where: {},
+    data: {
+      redAlertDuration: Number(redAlertDuration),
+      yellowAlertDuration: Number(yellowAlertDuration),
+    },
+  });
+
+  res.send({ data: stage });
 });
 
 router.get("/setup-db", async (req, res) => {
@@ -325,26 +343,36 @@ router.get("/setup-db", async (req, res) => {
             name: "Waiting",
             entryCameraId: waitingStageCameraEntry.id,
             exitCameraId: waitingStageCameraExit.id,
+            redAlertDuration: 20000,
+            yellowAlertDuration: 10000,
           },
           {
             name: "Stage 1",
             entryCameraId: stage1CameraEntry.id,
             exitCameraId: stage1CameraExit.id,
+            redAlertDuration: 20000,
+            yellowAlertDuration: 10000,
           },
           {
             name: "Stage 2",
             entryCameraId: stage2CameraEntry.id,
             exitCameraId: stage2CameraExit.id,
+            redAlertDuration: 20000,
+            yellowAlertDuration: 10000,
           },
           {
             name: "Stage 3",
             entryCameraId: stage3CameraEntry.id,
             exitCameraId: stage3CameraExit.id,
+            redAlertDuration: 20000,
+            yellowAlertDuration: 10000,
           },
           {
             name: "Water Wash",
             entryCameraId: waterWashCameraEntry.id,
             exitCameraId: waterWashCameraExit.id,
+            redAlertDuration: 20000,
+            yellowAlertDuration: 10000,
           },
         ],
       },
@@ -373,16 +401,18 @@ router.get("/process-jobs", async (req, res) => {
             jobStageStatus.status === "IN_PROGRESS" ||
             jobStageStatus.status === "YELLOW_ALERT"
           ) {
-            const timeElapsed = Date.now() - jobStageStatus.updatedAt.getTime() + Number(job.duration);
-            // if (timeElapsed > 30 * 60 * 1000) {
-            if (timeElapsed > 50 * 1000) {
+            const startTimestampOld = jobStageStatus.startTimestamp;
+            if (!startTimestampOld) return jobStageStatus;
+            const timeElapsed = Date.now() - startTimestampOld.getTime() + Number(jobStageStatus.duration);
+            if (timeElapsed > jobStageStatus.stage.redAlertDuration) {
+              sendRedAlert(job, jobStageStatus);
               return {
                 ...jobStageStatus,
                 status: "RED_ALERT",
               };
             }
-            // if (timeElapsed > 15 * 60 * 1000) {
-            if (timeElapsed > 5 * 1000) {
+            if (timeElapsed > jobStageStatus.stage.yellowAlertDuration) {
+              sendYellowAlert(job, jobStageStatus);
               return {
                 ...jobStageStatus,
                 status: "YELLOW_ALERT",
